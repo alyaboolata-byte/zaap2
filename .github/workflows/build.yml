@@ -24,16 +24,17 @@ jobs:
       - name: Replace icons in AppX
         shell: pwsh
         run: |
-          $appx = Get-ChildItem dist\*.appx | Select-Object -First 1
+          $appx = (Get-ChildItem dist\*.appx | Where-Object { $_.Name -notlike "*repack*" } | Select-Object -First 1).FullName
           $dir = "dist\appx_repack"
-          New-Item -ItemType Directory -Force -Path $dir
-          Copy-Item $appx.FullName "$dir\app.zip"
+          New-Item -ItemType Directory -Force -Path "$dir\extracted"
+          Copy-Item $appx "$dir\app.zip"
           Expand-Archive "$dir\app.zip" -DestinationPath "$dir\extracted" -Force
           Copy-Item "assets\Square44x44Logo.png" "$dir\extracted\assets\Square44x44Logo.png" -Force
           Copy-Item "assets\Square150x150Logo.png" "$dir\extracted\assets\Square150x150Logo.png" -Force
           Copy-Item "assets\Wide310x150Logo.png" "$dir\extracted\assets\Wide310x150Logo.png" -Force
           Copy-Item "assets\StoreLogo.png" "$dir\extracted\assets\StoreLogo.png" -Force
-          $makeappx = "${env:ProgramFiles(x86)}\Windows Kits\10\bin\10.0.22621.0\x64\makeappx.exe"
+          $makeappx = (Get-ChildItem "C:\Program Files (x86)\Windows Kits" -Recurse -Filter "makeappx.exe" | Select-Object -First 1).FullName
+          Write-Host "Found makeappx at: $makeappx"
           & $makeappx pack /d "$dir\extracted" /p "dist\ZaappDo_final.appx" /o
 
       - name: Upload AppX
